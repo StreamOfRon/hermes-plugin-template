@@ -18,6 +18,8 @@ def register(ctx):
     """
     # Register example tool
     ctx.register_tool(
+        name=EXAMPLE_TOOL_SCHEMA["name"],
+        toolset=EXAMPLE_TOOL_SCHEMA["name"],
         schema=EXAMPLE_TOOL_SCHEMA,
         handler=example_tool_handler,
     )

@@ -57,7 +57,12 @@ It provides boilerplate for all three Hermes extension layers: **Skills**, **Too
    from .tools import my_tool_handler
 
    def register(ctx):
-       ctx.register_tool(schema=MY_TOOL_SCHEMA, handler=my_tool_handler)
+       ctx.register_tool(
+           name=MY_TOOL_SCHEMA["name"],
+           toolset=MY_TOOL_SCHEMA["name"],
+           schema=MY_TOOL_SCHEMA,
+           handler=my_tool_handler,
+       )
    ```
 
 4. **Update `plugin/plugin.yaml`**:
@@ -129,7 +134,7 @@ def hermes_home(tmp_path, monkeypatch):
 ## Key Hermes Source Files (for reference)
 
 When implementing advanced patterns, reference the Hermes agent source:
-- Plugin loading: `hermes_agent/plugins/manager.py`
-- Tool execution: `hermes_agent/plugins/context.py`
-- Skill loading: `hermes_agent/skills/`
-- Hook system: Check for hook registration in the plugin context
+- Plugin loading: `hermes_cli/plugins.py`
+- Plugin context: `PluginContext` class in `hermes_cli/plugins.py`
+- Skill loading: `hermes_cli/skills_config.py`
+- Hook system: `invoke_hook()` in `hermes_cli/plugins.py`
