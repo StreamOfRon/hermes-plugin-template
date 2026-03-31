@@ -2,15 +2,26 @@
 
 Uses tmp_path fixture and monkeypatches HERMES_HOME to avoid
 interfering with the user's actual Hermes installation.
-Creates PluginManager directly (not global singleton).
+Resets the PluginManager singleton between tests.
 """
 
+import importlib
 import json
 import os
 import sys
 from pathlib import Path
 
 import pytest
+
+
+@pytest.fixture(autouse=True)
+def reset_plugin_manager():
+    """Reset the PluginManager singleton before each test."""
+    import hermes_cli.plugins
+
+    hermes_cli.plugins._plugin_manager = None
+    yield
+    hermes_cli.plugins._plugin_manager = None
 
 
 @pytest.fixture
@@ -55,11 +66,9 @@ class TestPluginDiscovery:
         """PluginManager should handle empty plugins directory."""
         (hermes_home / "plugins").mkdir(exist_ok=True)
 
-        from hermes_cli.plugins import PluginManager
+        from hermes_cli.plugins import get_plugin_manager
 
-        # Create a fresh manager (singleton from get_plugin_manager may
-        # carry state from other tests)
-        manager = PluginManager()
+        manager = get_plugin_manager()
         manager.discover_and_load()
 
         assert len(manager.list_plugins()) == 0
