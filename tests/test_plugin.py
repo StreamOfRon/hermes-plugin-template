@@ -1,162 +1,131 @@
-"""Tests for plugin loading, discovery, and tool registration.
+"""Tests for plugin structure and tool handler contract.
 
-Uses tmp_path fixture and monkeypatches HERMES_HOME to avoid
-interfering with the user's actual Hermes installation.
-Resets the PluginManager singleton between tests.
+These tests validate the plugin's own code without depending on
+Hermes's internal PluginManager singleton or namespace package caching.
 """
 
-import importlib
 import json
-import os
-import sys
 from pathlib import Path
 
 import pytest
+import yaml
+
+PLUGIN_DIR = Path(__file__).parent.parent / "plugin"
 
 
-@pytest.fixture(autouse=True)
-def reset_plugin_manager():
-    """Reset the PluginManager singleton and cached plugin modules before each test."""
-    import hermes_cli.plugins
+class TestPluginYaml:
+    """Validate plugin.yaml manifest."""
 
-    hermes_cli.plugins._plugin_manager = None
+    def test_file_exists(self):
+        assert (PLUGIN_DIR / "plugin.yaml").exists()
 
-    # Clear cached plugin modules so they get re-imported fresh
-    for key in list(sys.modules.keys()):
-        if key.startswith("hermes_plugins."):
-            del sys.modules[key]
+    def test_valid_yaml(self):
+        data = yaml.safe_load((PLUGIN_DIR / "plugin.yaml").read_text())
+        assert isinstance(data, dict)
 
-    yield
+    def test_required_fields(self):
+        data = yaml.safe_load((PLUGIN_DIR / "plugin.yaml").read_text())
+        assert "name" in data
+        assert "version" in data
+        assert "provides_tools" in data
+        assert isinstance(data["provides_tools"], list)
+        assert len(data["provides_tools"]) > 0
 
-    hermes_cli.plugins._plugin_manager = None
+    def test_tool_names_match_schema(self):
+        """Every tool in plugin.yaml should have a matching schema."""
+        manifest = yaml.safe_load((PLUGIN_DIR / "plugin.yaml").read_text())
+        from plugin.schemas import EXAMPLE_TOOL_SCHEMA
 
-    for key in list(sys.modules.keys()):
-        if key.startswith("hermes_plugins."):
-            del sys.modules[key]
-
-
-@pytest.fixture
-def hermes_home(tmp_path, monkeypatch):
-    """Create a temporary HERMES_HOME and monkeypatch the env var."""
-    hermes = tmp_path / ".hermes"
-    hermes.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(hermes))
-    return hermes
+        for tool_name in manifest["provides_tools"]:
+            assert EXAMPLE_TOOL_SCHEMA["name"] == tool_name
 
 
-@pytest.fixture
-def plugin_dir(hermes_home):
-    """Create a plugins directory with the example plugin installed."""
-    plugins = hermes_home / "plugins" / "example_plugin"
-    plugins.mkdir(parents=True)
+class TestPluginInit:
+    """Validate __init__.py has the required register function."""
 
-    # Copy plugin files to the temp location
-    source = Path(__file__).parent.parent / "plugin"
-    for item in source.iterdir():
-        if item.is_file():
-            dest = plugins / item.name
-            dest.write_text(item.read_text())
+    def test_file_exists(self):
+        assert (PLUGIN_DIR / "__init__.py").exists()
 
-    return plugins
+    def test_has_register_function(self):
+        """__init__.py must expose a register() callable."""
+        import plugin
+
+        assert hasattr(plugin, "register")
+        assert callable(plugin.register)
 
 
-class TestPluginDiscovery:
-    """Test that plugins are discovered correctly."""
+class TestToolSchemas:
+    """Validate tool schema definitions."""
 
-    def test_discover_plugin_in_hermes_home(self, hermes_home, plugin_dir):
-        """PluginManager should find plugins in HERMES_HOME/plugins/."""
-        from hermes_cli.plugins import get_plugin_manager
+    def test_schema_has_name(self):
+        from plugin.schemas import EXAMPLE_TOOL_SCHEMA
 
-        manager = get_plugin_manager()
-        manager.discover_and_load()
+        assert "name" in EXAMPLE_TOOL_SCHEMA
+        assert isinstance(EXAMPLE_TOOL_SCHEMA["name"], str)
 
-        plugin_names = [p["name"] for p in manager.list_plugins()]
-        assert "example_plugin" in plugin_names
+    def test_schema_has_description(self):
+        from plugin.schemas import EXAMPLE_TOOL_SCHEMA
 
-    def test_discover_empty_directory(self, hermes_home):
-        """PluginManager should handle empty plugins directory."""
-        (hermes_home / "plugins").mkdir(exist_ok=True)
+        assert "description" in EXAMPLE_TOOL_SCHEMA
 
-        from hermes_cli.plugins import get_plugin_manager
+    def test_schema_has_parameters(self):
+        from plugin.schemas import EXAMPLE_TOOL_SCHEMA
 
-        manager = get_plugin_manager()
-        manager.discover_and_load()
+        assert "parameters" in EXAMPLE_TOOL_SCHEMA
+        assert "type" in EXAMPLE_TOOL_SCHEMA["parameters"]
+        assert "properties" in EXAMPLE_TOOL_SCHEMA["parameters"]
 
-        assert len(manager.list_plugins()) == 0
+    def test_required_fields_are_strings(self):
+        from plugin.schemas import EXAMPLE_TOOL_SCHEMA
 
-
-class TestPluginLoading:
-    """Test that plugins load correctly."""
-
-    def test_load_plugin(self, hermes_home, plugin_dir):
-        """Plugin should load without errors."""
-        from hermes_cli.plugins import get_plugin_manager
-
-        manager = get_plugin_manager()
-        manager.discover_and_load()
-
-        plugins = manager.list_plugins()
-        assert len(plugins) == 1
-        assert plugins[0]["name"] == "example_plugin"
-
-    def test_load_plugin_manifest(self, hermes_home, plugin_dir):
-        """Plugin manifest (plugin.yaml) should be parsed correctly."""
-        from hermes_cli.plugins import get_plugin_manager
-
-        manager = get_plugin_manager()
-        manager.discover_and_load()
-
-        plugin = manager.list_plugins()[0]
-        assert plugin["version"] == "0.1.0"
-        assert plugin["error"] is None
+        for field in EXAMPLE_TOOL_SCHEMA["parameters"].get("required", []):
+            assert field in EXAMPLE_TOOL_SCHEMA["parameters"]["properties"]
 
 
-class TestToolRegistration:
-    """Test that tools are registered correctly."""
+class TestToolHandlers:
+    """Validate tool handler implementations follow the contract."""
 
-    def test_tool_registration(self, hermes_home, plugin_dir):
-        """Registered tools should be available in the tool registry."""
-        from hermes_cli.plugins import get_plugin_manager, get_plugin_tool_names
+    def test_handler_returns_json_string(self):
+        from plugin.tools import example_tool_handler
 
-        manager = get_plugin_manager()
-        manager.discover_and_load()
+        result = example_tool_handler({"message": "hello"})
+        assert isinstance(result, str)
+        data = json.loads(result)
+        assert isinstance(data, dict)
 
-        tool_names = get_plugin_tool_names()
-        assert "example_plugin_example_tool" in tool_names
+    def test_handler_success_response(self):
+        from plugin.tools import example_tool_handler
 
-    def test_tool_execution(self, hermes_home, plugin_dir):
-        """Registered tool should execute and return valid JSON."""
-        from hermes_cli.plugins import get_plugin_manager
+        result = example_tool_handler({"message": "hello world"})
+        data = json.loads(result)
+        assert data["status"] == "success"
+        assert data["message"] == "hello world"
+        assert data["length"] == 11
 
-        manager = get_plugin_manager()
-        manager.discover_and_load()
+    def test_handler_verbose_mode(self):
+        from plugin.tools import example_tool_handler
 
-        plugin = manager.list_plugins()[0]
-        assert plugin["tools"] >= 1
-        assert plugin["error"] is None
+        result = example_tool_handler({"message": "test", "verbose": True})
+        data = json.loads(result)
+        assert data["status"] == "success"
+        assert "details" in data
 
-    def test_tool_error_handling(self, hermes_home, plugin_dir):
-        """Plugin should load without errors even if tool handler fails."""
-        from hermes_cli.plugins import get_plugin_manager
+    def test_handler_error_returns_json(self):
+        """Handler must never raise; errors must be returned as JSON."""
+        from plugin.tools import example_tool_handler
 
-        manager = get_plugin_manager()
-        manager.discover_and_load()
+        # Even with missing keys, handler should not raise
+        result = example_tool_handler({})
+        data = json.loads(result)
+        assert "status" in data
 
-        plugin = manager.list_plugins()[0]
-        assert plugin["error"] is None
+    def test_handler_does_not_raise(self):
+        """Handler must catch all exceptions."""
+        from plugin.tools import example_tool_handler
 
-
-class TestHookInvocation:
-    """Test lifecycle hook registration and invocation."""
-
-    def test_hook_registration(self, hermes_home, plugin_dir):
-        """Plugin should be able to register hooks."""
-        from hermes_cli.plugins import get_plugin_manager, invoke_hook
-
-        manager = get_plugin_manager()
-        manager.discover_and_load()
-
-        plugin = manager.list_plugins()[0]
-        assert plugin["hooks"] == 0
-
-        assert callable(invoke_hook)
+        try:
+            result = example_tool_handler(None)
+            data = json.loads(result)
+            assert "status" in data
+        except Exception:
+            pytest.fail("Handler raised an exception instead of returning error JSON")

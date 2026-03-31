@@ -24,7 +24,7 @@ jobs:
       - name: Install dependencies
         run: |
           uv venv
-          uv pip install pytest pyyaml "hermes-agent @ git+https://github.com/NousResearch/hermes-agent.git"
+          uv pip install pytest pyyaml
 
       - name: Run tests
         run: uv run pytest tests/ -v
