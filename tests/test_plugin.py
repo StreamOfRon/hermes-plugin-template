@@ -16,12 +16,23 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def reset_plugin_manager():
-    """Reset the PluginManager singleton before each test."""
+    """Reset the PluginManager singleton and cached plugin modules before each test."""
     import hermes_cli.plugins
 
     hermes_cli.plugins._plugin_manager = None
+
+    # Clear cached plugin modules so they get re-imported fresh
+    for key in list(sys.modules.keys()):
+        if key.startswith("hermes_plugins."):
+            del sys.modules[key]
+
     yield
+
     hermes_cli.plugins._plugin_manager = None
+
+    for key in list(sys.modules.keys()):
+        if key.startswith("hermes_plugins."):
+            del sys.modules[key]
 
 
 @pytest.fixture
