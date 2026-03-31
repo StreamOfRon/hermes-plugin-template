@@ -1,12 +1,16 @@
 """Tool schema definitions for the example plugin.
 
 Each schema follows the OpenAI function-calling format.
-The schema name must match the plugin.yaml provides_tools entry.
+The schema name should match the entry in plugin.yaml provides_tools.
 """
 
 EXAMPLE_TOOL_SCHEMA = {
-    "name": "example_plugin_example_tool",
-    "description": "An example tool that demonstrates the Hermes plugin tool contract",
+    "name": "example_tool",
+    "description": (
+        "An example tool that demonstrates the Hermes plugin tool contract. "
+        "Use this to see how tool schemas are structured and how the LLM "
+        "decides when to call your tool based on the description."
+    ),
     "parameters": {
         "type": "object",
         "properties": {

@@ -19,13 +19,13 @@ install-local:
 	@echo "Installing plugin to ~/.hermes/plugins/example_plugin/"
 	mkdir -p ~/.hermes/plugins/example_plugin
 	cp -r plugin/* ~/.hermes/plugins/example_plugin/
-	@echo "Done. Run 'hermes plugins list' to verify."
+	@echo "Done. Start Hermes and check /plugins to verify."
 
 install-skill:
 	@echo "Installing skill to ~/.hermes/skills/example-skill/"
 	mkdir -p ~/.hermes/skills/example-skill
-	cp -r skill/* ~/.hermes/skills/example-skill/
-	@echo "Done. Run 'hermes' and check for /example-skill command."
+	cp skill/* ~/.hermes/skills/example-skill/
+	@echo "Done. Start Hermes and check for /example-skill command."
 
 clean:
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
