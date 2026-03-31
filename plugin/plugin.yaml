@@ -1,0 +1,8 @@
+name: example_plugin
+version: 0.1.0
+description: Example Hermes plugin demonstrating all three extension layers
+author: Your Name
+requires_env: []
+provides_tools:
+  - example_plugin_example_tool
+provides_hooks: []
