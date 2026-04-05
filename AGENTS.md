@@ -15,12 +15,15 @@ It provides boilerplate for all three Hermes extension layers: **Skills**, **Too
 ├── skill/                  # SKILL LAYER — Markdown instructions for AI
 │   └── SKILL.md            # Skill definition with YAML frontmatter
 │
+├── scripts/                # UTILITY SCRIPTS
+│   └── install.py          # Install plugin/skill to local HERMES_HOME
+│
 ├── tests/                  # TEST SCAFFOLDING
 │   ├── test_plugin.py      # Plugin loading + tool registration tests
 │   └── test_skill.py       # Skill frontmatter + structure tests
 │
 ├── pyproject.toml          # Pip distribution config
-├── Makefile                # Convenience targets
+├── ruff.toml               # Linting configuration
 └── AGENTS.md               # This file
 ```
 

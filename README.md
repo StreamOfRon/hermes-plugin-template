@@ -5,7 +5,7 @@ A boilerplate template for building [Hermes](https://github.com/NousResearch/her
 ## How to Use This Template
 
 1. Click **"Use this template"** on GitHub (or fork this repository)
-2. Clone your new repository locally
+2. Clone your new repository
 3. Customize the files (see [Quick Start](#quick-start))
 4. Install into your Hermes instance
 
@@ -16,16 +16,13 @@ A boilerplate template for building [Hermes](https://github.com/NousResearch/her
 git clone git@github.com:your-org/your-hermes-plugin.git
 cd your-hermes-plugin
 
-# 2. Install dev dependencies
-make dev-install
+# 2. Create a virtual environment and install dev dependencies
+uv venv && uv pip install -e ".[dev]"
 
-# 3. Install plugin to local Hermes
-make install-local
+# 3. Install plugin and skill to local Hermes
+uv run scripts/install.py --local
 
-# 4. Install skill to local Hermes
-make install-skill
-
-# 5. Verify
+# 4. Verify
 hermes
 ```
 
@@ -74,14 +71,21 @@ Plugins can register lifecycle hooks that run at specific points in the Hermes s
 
 ```bash
 # Run all tests
-make test
-
-# Or directly with pytest
-python -m pytest tests/ -v
+uv run pytest tests/ -v
 
 # Run specific test file
-python -m pytest tests/test_plugin.py -v
-python -m pytest tests/test_skill.py -v
+uv run pytest tests/test_plugin.py -v
+uv run pytest tests/test_skill.py -v
+```
+
+## Linting
+
+```bash
+# Check for issues
+uv run ruff check plugin/ tests/
+
+# Auto-fix
+uv run ruff check --fix plugin/ tests/
 ```
 
 ## Distribution
@@ -89,7 +93,7 @@ python -m pytest tests/test_skill.py -v
 ### Via GitHub (recommended for teams)
 
 1. Push your customized plugin to a GitHub repository
-2. Users clone and run `make install-local`
+2. Users clone and run `uv run scripts/install.py --local`
 
 ### Via pip (recommended for public distribution)
 
