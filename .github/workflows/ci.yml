@@ -27,7 +27,7 @@ jobs:
           uv pip install pytest pyyaml ruff
 
       - name: Run linter
-        run: uv run ruff check plugin/ tests/
+        run: uv run ruff check . --exclude .venv
 
       - name: Run tests
         run: uv run pytest tests/ -v
