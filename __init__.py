@@ -7,8 +7,8 @@ when the plugin is discovered and loaded.
 
 import logging
 
-from . import tools
-from .schemas import EXAMPLE_TOOL_SCHEMA
+import tools
+from schemas import EXAMPLE_TOOL_SCHEMA
 
 logger = logging.getLogger(__name__)
 

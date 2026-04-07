@@ -47,14 +47,14 @@ skill/
 └── SKILL.md        # Skill definition with frontmatter
 ```
 
-### Tool Layer (`plugin/`)
+### Tool Layer (repo root)
 
 Tools are Python functions exposed to the AI model as function-calling capabilities. Each tool has a schema (OpenAI format) and a handler implementation.
 
 **Use when**: You want the AI to call your code — API integrations, data processing, external services.
 
 ```
-plugin/
+<repo root>/
 ├── plugin.yaml     # Manifest (name, version, tools, hooks)
 ├── __init__.py     # register(ctx) entry point — wiring: schemas → handlers, register hooks
 ├── tools.py        # Handler implementations — the code that runs
@@ -82,10 +82,10 @@ uv run pytest tests/test_skill.py -v
 
 ```bash
 # Check for issues
-uv run ruff check plugin/ tests/
+uv run ruff check __init__.py schemas.py tools.py tests/
 
 # Auto-fix
-uv run ruff check --fix plugin/ tests/
+uv run ruff check --fix __init__.py schemas.py tools.py tests/
 ```
 
 ## Distribution
@@ -116,9 +116,9 @@ Publish your `SKILL.md` to the [Hermes Skills Hub](https://github.com/NousResear
 See `AGENTS.md` for detailed instructions on adding tools, skills, and hooks.
 
 Quick summary:
-1. Add schema to `plugin/schemas.py`
-2. Add handler to `plugin/tools.py`
-3. Register in `plugin/__init__.py`
+1. Add schema to `schemas.py`
+2. Add handler to `tools.py`
+3. Register in `__init__.py`
 4. Update `plugin.yaml` `provides_tools` list
 
 ## Plugin Structure

@@ -30,11 +30,12 @@ dev = [
     "hermes-agent @ git+https://github.com/NousResearch/hermes-agent.git",
 ]
 
-[project.entry-points."hermes_agent.plugins"]
-example_plugin = "plugin"
+[tool.setuptools]
+py-modules = ["__init__", "schemas", "tools"]
 
-[tool.setuptools.packages.find]
-include = ["plugin*"]
+[project.entry-points."hermes_agent.plugins"]
+# For pip distribution, update the module name when renaming this template
+example_plugin = "__init__:register"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

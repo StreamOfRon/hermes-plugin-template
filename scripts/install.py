@@ -25,17 +25,19 @@ def get_hermes_home() -> Path:
 
 def install_plugin(plugin_name: str, dry_run: bool = False) -> bool:
     """Copy plugin files to HERMES_HOME/plugins/<name>/."""
-    plugin_dir = Path(__file__).parent.parent / "plugin"
-    if not plugin_dir.exists():
-        print(f"Error: plugin/ directory not found at {plugin_dir}", file=sys.stderr)
-        return False
+    root = Path(__file__).parent.parent
+    plugin_files = ["plugin.yaml", "__init__.py", "schemas.py", "tools.py"]
+
+    for f in plugin_files:
+        if not (root / f).exists():
+            print(f"Error: {f} not found at {root}", file=sys.stderr)
+            return False
 
     dest = get_hermes_home() / "plugins" / plugin_name
     if dry_run:
         print(f"[dry-run] Would install plugin to: {dest}")
-        for f in sorted(plugin_dir.iterdir()):
-            if f.is_file():
-                print(f"  - {f.name}")
+        for f in plugin_files:
+            print(f"  - {f}")
         return True
 
     if dest.exists():
@@ -44,9 +46,8 @@ def install_plugin(plugin_name: str, dry_run: bool = False) -> bool:
         return True
 
     dest.mkdir(parents=True, exist_ok=True)
-    for f in plugin_dir.iterdir():
-        if f.is_file() and f.name != "__pycache__":
-            shutil.copy2(f, dest / f.name)
+    for f in plugin_files:
+        shutil.copy2(root / f, dest / f)
 
     print(f"Plugin installed to: {dest}")
     return True
@@ -88,7 +89,7 @@ def main():
         args.local = True  # default: install everything
 
     # Read plugin name from plugin.yaml
-    plugin_yaml = Path(__file__).parent.parent / "plugin" / "plugin.yaml"
+    plugin_yaml = Path(__file__).parent.parent / "plugin.yaml"
     try:
         import yaml
         manifest = yaml.safe_load(plugin_yaml.read_text())
